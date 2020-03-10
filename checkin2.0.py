@@ -26,23 +26,25 @@ from PIL import Image
     }
 """
 
-post_data = {
-    'courseId': None,  # 课程id
-    'classId': None,  # 班级id
-    'fid': '2182',  # 学校id
-    'activeId': None  # 无需填写
-}
-
+# 需要签到的课程列表
 course_list = [
+    {
+        # 本人的test
+        'courseId': '210575187',
+        'classId': '21697074',
+        'course_name': 'test'
+    },
     {
         # 本人的java课程
         'courseId': '210205345',
         'classId': '21276854',
+        'course_name': 'java'
     },
     {
         # 本人的Web课程
         'courseId': '203426623',
         'classId': '14232535',
+        'course_name': 'web'
     }
 ]
 
@@ -69,7 +71,7 @@ header = {
                   'Chrome/80.0.3987.122 Safari/537.36',
     'Sec-Fetch-Dest': 'document',
     'Upgrade-Insecure-Requests': '1',
-    'Cookie': '',  # 可选参数，免登陆
+    # 'Cookie': '',  # 可选参数，免登陆
 }
 
 r_session = requests.session()
@@ -78,6 +80,7 @@ r_session = requests.session()
 def save_html(text, filename):
     with open('%s.html' % filename, 'x') as f:
         f.write(text)
+        print('文件%s.html已保存' % filename)
 
 
 def login():
@@ -102,8 +105,8 @@ def login():
     login_data['numcode'] = str(numcode)
     response = r_session.post(url=login_url, headers=login_headers, data=login_data)
     # print(response.text)
-    test_url = 'http://i.mooc.chaoxing.com/space/index?t=1583831617509'
-    response = r_session.get(url=test_url, headers=header)
+    # test_url = 'http://i.mooc.chaoxing.com/space/index?t=1583831617509'
+    # response = r_session.get(url=test_url, headers=header)
     # print(response.text)
 
 
@@ -126,8 +129,15 @@ def get_active_id(text):
 
 
 def check_in(course):
+    post_data = {
+        'courseId': None,  # 课程id
+        'classId': None,  # 班级id
+        'fid': '2182',  # 学校id
+        'activeId': None  # 无需填写
+    }
+
     if not active_list:
-        print("没有签到任务")
+        print("没有签到任务或者登录失败")
     for active_id in active_list:
         post_data['activeId'] = active_id
         post_data['courseId'] = course['courseId']
@@ -143,12 +153,14 @@ def check_in(course):
         else:
             print("==========>%s签到失败" % active_id)
             save_html(response.text, active_id)
+        time.sleep(3)
 
 
 def open_course_page():
     base_url = 'https://mobilelearn.chaoxing.com/widget/pcpick/stu/index?'
 
     for course in course_list:
+        print('正在检查%s课程签到任务' % course['course_name'])
         current_time = str(time.strftime("%m-%d %H:%M:%S", time.localtime()))
         request_url = base_url + 'courseId=' + course['courseId'] + '&jclassId=' + course['classId']
         print(request_url)
@@ -158,6 +170,7 @@ def open_course_page():
         active_list.clear()  # 获得id前清空
         get_active_id(text)  # 获取签到任务
         check_in(course)  # 签到
+        print('-'*50)
         time.sleep(5)
 
 
