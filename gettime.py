@@ -37,7 +37,7 @@ def login():
         'productid': '',
         't': 'true',
         'uname': 'gg48@qq.com',
-        'password': 'enNxZmh5MDgwNA==',  # base64加密
+        'password': '',  # base64加密
         'numcode': '',
         'verCode': '',
     }
