@@ -3,7 +3,9 @@
 
 ## ！！！仅支持普通签到
 学习通自动签到，针对早起不能学生，需要自行提供参数和cookie
-**目前未知cookie的有效时间**
+
+**目前已知cookie的有效时间至少为一天**
+
 小白勿用
 
 ~因为匆忙制作的签到脚本，我的身体已经菠萝菠萝哒~
@@ -48,8 +50,15 @@ sudo vim /etc/crontab
 基本格式
 
 ```
- *   *    *   *    *  user  command
-分 时 日 月 周 用户 命令
+# Example of job definition:
+# .---------------- minute (0 - 59)
+# |  .------------- hour (0 - 23)
+# |  |  .---------- day of month (1 - 31)
+# |  |  |  .------- month (1 - 12) OR jan,feb,mar,apr ...
+# |  |  |  |  .---- day of week (0 - 6) (Sunday=0 or 7) OR sun,mon,tue,wed,thu,fri,sat
+# |  |  |  |  |
+# *  *  *  *  * user-name  command to be executed
+
 ```
 
 **四、举例说明**

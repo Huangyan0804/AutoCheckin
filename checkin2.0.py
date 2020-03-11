@@ -11,18 +11,26 @@ from PIL import Image
     学习通自动签到，针对早起不能学生，需要自行提供参数和cookie
     目前未知cookie的有效时间
     小白勿用
-    
+
     因为匆忙制作的签到脚本，我的身体已经菠萝菠萝哒
-    ----------------------------------- 
+    -----------------------------------
     需要修改的地方有：
-    course_list 签到的课程
+    课程参数：
+    course_list = [
+        {
+            'courseId':  # 课程号
+            'classId':  # 班级号,
+            'course_name':  # 课程名称，可以为空，用于输出日志
+        }
+    ]
+    登陆参数：
     login_data {
         uname:  # 用户名
         password:  #自行base64加密
     }
     可选参数：
     header {
-        Cookie：
+        Cookie： # Cookie免登陆
     }
 """
 
@@ -60,7 +68,7 @@ login_data = {
     'f': '0',
     'productid': '',
     't': 'true',
-    'uname': 'gg48@qq.com',  # 用户名
+    'uname': '',  # 用户名
     'password': '',  # base64加密
     'numcode': '',
     'verCode': '',
@@ -78,14 +86,17 @@ r_session = requests.session()
 
 
 def save_html(text, filename):
+    """保存html文件"""
     with open('%s.html' % filename, 'x') as f:
         f.write(text)
         print('文件%s.html已保存' % filename)
 
 
 def login():
+    """登陆函数"""
     # 验证码地址
     code_url = 'https://passport2.chaoxing.com/num/code?1583831609442'
+    # 登录地址
     login_url = 'https://passport2.chaoxing.com/login?refer=http%3A%2F%2Fi.mooc.chaoxing.com'
     login_headers = {
         'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) '
@@ -94,7 +105,6 @@ def login():
         'Host': 'passport2.chaoxing.com',
         'Referer': 'https://passport2.chaoxing.com/login?fid=2182&refer=http://i.mooc.chaoxing.com',
         'Origin': 'https://passport2.chaoxing.com',
-
     }
 
     response = r_session.get(url=code_url, headers=login_headers)
@@ -103,17 +113,15 @@ def login():
     Image.open('code_img.png').show()
     numcode = input("请输入验证码：")
     login_data['numcode'] = str(numcode)
+    # 登录
     response = r_session.post(url=login_url, headers=login_headers, data=login_data)
-    # print(response.text)
-    # test_url = 'http://i.mooc.chaoxing.com/space/index?t=1583831617509'
-    # response = r_session.get(url=test_url, headers=header)
-    # print(response.text)
 
 
 active_list = []
 
 
 def get_active_id(text):
+    """获取签到活动id"""
     b_soup = BeautifulSoup(text, 'html.parser')
     start_list = b_soup.find_all('div', id='startList')
     for x in start_list:
@@ -129,6 +137,7 @@ def get_active_id(text):
 
 
 def check_in(course):
+    """post 签到"""
     post_data = {
         'courseId': None,  # 课程id
         'classId': None,  # 班级id
@@ -157,6 +166,7 @@ def check_in(course):
 
 
 def open_course_page():
+    """打开课程活动页"""
     base_url = 'https://mobilelearn.chaoxing.com/widget/pcpick/stu/index?'
 
     for course in course_list:
@@ -175,14 +185,7 @@ def open_course_page():
 
 
 def main():
-    # with open('lists.html', 'r') as f:
-    #     text = f.read()
-
-    # 我的密码
-    with open('pswd.txt', 'r') as f:
-        login_data['password'] = f.read()
-
-    login()
+    # login()  # 登陆函数，根据需要自行调用
     open_course_page()
 
 
