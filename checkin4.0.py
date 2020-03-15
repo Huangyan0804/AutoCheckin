@@ -15,8 +15,8 @@ from PIL import Image
     登录方式：二维码登录，自动保存cookie
     因为匆忙制作的签到脚本，我的身体已经菠萝菠萝哒
     -----------------------------------
-    需要修改的地方有：
-    课程参数：
+    需要修改的地方, 请在下方代码处修改：
+    1.课程参数：
     course_list = [
         {
             'name':  # 你的姓名
@@ -24,6 +24,19 @@ from PIL import Image
             'course_name':  # 课程名称，可不填
         }
     ]
+    
+    2.位置信息
+    address = {
+        "latitude": "-1",  # 纬度
+        'longitude': "-1",  # 经度
+        'addr': "",  # 位置名称
+        'ifTiJiao': "0"  # 是否开启提交位置信息，默认关闭
+    }
+    
+    3.拍照签到的图片
+    请在该文件的目录下存放名字为up_img.jpg的图片
+    如有拍照签到会自动上传该图片，否则会自动上传wyz！
+
     
 """
 
@@ -35,14 +48,21 @@ course_list = [
         'course_name': ''
     }
 ]
+# 编辑位置信息
+address = {
+    "latitude": "-1",  # 纬度
+    'longitude': "-1",  # 经度
+    'addr': "",  # 位置名称
+    'ifTiJiao': "0"  # 是否开启提交位置信息，默认关闭
+}
 
 post_data = {
-    'name': None,  # 姓名
-    'puid': None,
-    'courseId': None,  # 课程id
-    'classId': None,  # 班级id
-    'fid': None,  # 学校id
-    'activeId': None,  # 无需填写
+    'name': "",  # 姓名
+    'puid': "",
+    'courseId': "",  # 课程id
+    'classId': "",  # 班级id
+    'fid': "",  # 学校id
+    'activeId': "",  # 无需填写
 }
 
 header = {
@@ -157,7 +177,27 @@ def login():
         print('请登录')
         re_login(login_headers)
 
-active_list = []
+
+def upload_img(filename):
+    url = 'https://pan-yz.chaoxing.com/upload?_token=5d2e8d0aaa92e3701398035f530c4155'
+    mobile_header = {
+        'User-Agent': 'Dalvik/2.1.0 (Linux; U; Android 10; MI 8 MIUI/20.2.27)'
+                      ' com.chaoxing.mobile/ChaoXingStudy_3_4.3.6_android_phone_496_27 (@Kalimdor)'
+                      '_994222229cb94d688c462b7257600006',
+        'Host': 'pan-yz.chaoxing.com'
+    }
+    img = {}
+    try:
+        img = {"file": ("123.jpg", open(filename, "rb"))}
+    except:
+        print("找不到图片")
+        print("http://pks3.ananas.chaoxing.com/star3/312_412c/5712278eff455f9bcd76a85cd95c5de3.jpg")
+        return "5712278eff455f9bcd76a85cd95c5de3"  # wyz
+    i_data = {'puid': "80421235"}
+    response = r_session.post(url=url, headers=mobile_header, data=i_data, files=img)
+    # print(response.text)
+    print("照片预览：http://pks3.ananas.chaoxing.com/star3/312_412c/" + response.json().get('objectId') + ".jpg")
+    return response.json().get('objectId')
 
 
 def get_post_data(text):
@@ -166,6 +206,9 @@ def get_post_data(text):
     post_data['courseId'] = b_soup.find_all('input', id='courseId')[0]['value']
     post_data['classId'] = b_soup.find_all('input', id='classId')[0]['value']
     post_data['fid'] = b_soup.find_all('input', id='fid')[0]['value']
+
+
+active_list = []
 
 
 def get_active_id(text):
@@ -184,7 +227,7 @@ def get_active_id(text):
                 pass
 
 
-def normal_check(base_url, post_data):
+def normal_check(base_url):
     """普通签到"""
     args = "/widget/sign/pcStuSignController/preSign?" \
            + "activeId=" + post_data['activeId'] \
@@ -195,7 +238,7 @@ def normal_check(base_url, post_data):
     return response
 
 
-def hand_check(base_url, post_data):
+def hand_check(base_url):
     """手势签到"""
     args = "/widget/sign/pcStuSignController/signIn?" \
            + "&courseId=" + post_data['courseId'] \
@@ -205,14 +248,46 @@ def hand_check(base_url, post_data):
     return response
 
 
-def qcode_check(base_url, post_data):
+def qcode_check(base_url):
     """二维码签到"""
     args = "/pptSign/stuSignajax?" \
-           + "name=" + post_data['name'] \
+           + "name=" + quote(post_data['name']) \
            + "&activeId=" + post_data['activeId'] \
            + "&uid=" + post_data['puid'] \
            + "&clientip=&useragent=&latitude=-1&longitude=-1" \
            + "&fid=" + post_data['fid'] + "&appType=15"
+    response = r_session.get(url=base_url + args, headers=header)
+    return response
+
+
+def addr_check(base_url):
+    """位置签到"""
+    args = "/pptSign/stuSignajax?" \
+           + "name=" + quote(post_data['name']) \
+           + "&address=" + address["addr"] \
+           + "&activeId=" + post_data['activeId'] \
+           + "&uid=" + post_data['puid'] \
+           + "&clientip=" + "" \
+           + "&latitude=" + address["latitude"] \
+           + "&longitude=" + address["longitude"] \
+           + "&fid=" + post_data['fid'] \
+           + "&appType=" + '15' \
+           + "&ifTiJiao=" + "1"
+    response = r_session.get(url=base_url + args, headers=header)
+    return response
+
+
+def tphoto_check(base_url):
+    """拍照签到"""
+    objectid = upload_img("up_img.jpg")
+    args = "/pptSign/stuSignajax?" \
+           + "activeId=" + post_data['activeId'] \
+           + "&uid=" + post_data['puid'] \
+           + "&clientip=&useragent=&latitude=-1&longitude=-1" \
+           + "&appType=15" \
+           + "&fid=" + post_data['fid'] \
+           + "&objectId=" + objectid \
+           + "&name=" + quote(post_data['name'])
     response = r_session.get(url=base_url + args, headers=header)
     return response
 
@@ -227,24 +302,31 @@ def check_in():
         post_data['activeId'] = active_id
         base_url = 'https://mobilelearn.chaoxing.com'
         # 打开签到页
-        response = normal_check(base_url, post_data)
+        response = normal_check(base_url)
         if re.findall(r'签到成功', response.text):
             print("==========>%s已签到成功" % active_id)
+        elif re.findall(r'手势图案', response.text):
+            # 手势签到
+            response = hand_check(base_url)
+            if re.findall(r'签到成功', response.text):
+                print("==========>%s手势签到成功" % active_id)
+        elif re.findall(r'手机扫码', response.text):
+            # 二维码签到
+            response = qcode_check(base_url)
+            if re.findall(r'success', response.text):
+                print("==========>%s二维码签到成功" % active_id)
+        elif re.findall(r'位置信息', response.text):
+            response = addr_check(base_url)
+            if re.findall(r'success', response.text):
+                print("==========>%s位置签到成功" % active_id)
+        elif re.findall(r'手机拍照', response.text):
+            response = tphoto_check(base_url)
+            if re.findall(r'success', response.text):
+                print("==========>%s拍照签到成功" % active_id)
         else:
-            if re.findall(r'手势图案', response.text):
-                # 手势签到
-                response = hand_check(base_url, post_data)
-                if re.findall(r'签到成功', response.text):
-                    print("==========>%s手势签到成功" % active_id)
-            elif re.findall(r'手机扫码', response.text):
-                # 二维码签到
-                response = qcode_check(base_url, post_data)
-                if re.findall(r'success', response.text):
-                    print("==========>%s二维码签到成功" % active_id)
-            else:
-                print('暂不支持的签到类型')
-        # print("==========>%s签到失败" % active_id)
-        # save_html(response.text, active_id)
+            print('==========>%s签到失败,未知原因，详情请查看%s.html' % (active_id, active_id))
+            save_html(response.text, active_id)
+
         time.sleep(3)
 
 
@@ -253,10 +335,8 @@ def open_course_page(course):
     print('正在检查%s课程签到任务' % course['course_name'])
     current_time = str(time.strftime("%m-%d %H:%M:%S", time.localtime()))
     request_url = course['url']
-    # print(request_url)
     response = r_session.get(url=request_url, headers=header)
     text = response.text
-    # save_html(text, current_time)
     active_list.clear()  # 获得id前清空
     get_post_data(text)  # 获取post_data
     get_active_id(text)  # 获取签到任务
@@ -264,12 +344,13 @@ def open_course_page(course):
 
 
 def main():
-    # login()  # 登陆函数，根据需要自行调用
+    login()  # 登陆函数，根据需要自行调用
     for course in course_list:
         # 遍历课程检查是否需要签到
         open_course_page(course)
         print('-' * 50)
         time.sleep(5)
+        break
 
 
 if __name__ == '__main__':
