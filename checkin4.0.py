@@ -350,7 +350,6 @@ def main():
         open_course_page(course)
         print('-' * 50)
         time.sleep(5)
-        break
 
 
 if __name__ == '__main__':
