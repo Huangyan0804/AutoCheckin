@@ -178,7 +178,7 @@ def get_active_id(text):
             try:
                 rawid = y[i]['onclick']
                 active_id = re.findall(r'activeDetail\((\d+),.*?\)', rawid)[0]
-                print(active_id)
+                # print(active_id)
                 active_list.append(active_id)
             except Exception as ret:
                 pass
@@ -220,7 +220,7 @@ def qcode_check(base_url, post_data):
 def check_in():
     """post 签到"""
     if not active_list:
-        print("没有签到任务或者登录失败")
+        print("没有签到任务")
         return
     # 循环签到各个任务
     for active_id in active_list:
@@ -253,7 +253,7 @@ def open_course_page(course):
     print('正在检查%s课程签到任务' % course['course_name'])
     current_time = str(time.strftime("%m-%d %H:%M:%S", time.localtime()))
     request_url = course['url']
-    print(request_url)
+    # print(request_url)
     response = r_session.get(url=request_url, headers=header)
     text = response.text
     # save_html(text, current_time)
