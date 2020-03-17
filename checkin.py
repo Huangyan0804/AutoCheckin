@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
+import sys
+
 from bs4 import BeautifulSoup
 import requests
 import time
@@ -9,19 +11,14 @@ import http.cookiejar as HC
 from PIL import Image
 
 """
-    ！！！支持普通签到，手势签到，二维码签到
-    学习通自动签到，针对早起不能学生，需要自行提供参数
-    目前已知cookie的有效时间至少为1天
-    登录方式：二维码登录，自动保存cookie
-    因为匆忙制作的签到脚本，我的身体已经菠萝菠萝哒
-    -----------------------------------
+
     需要修改的地方, 请在下方代码处修改：
     1.课程参数：
     course_list = [
         {
             'name':  # 你的姓名
             'url':  # 课程的任务页面/活动首页
-            'course_name':  # 课程名称，可不填
+            'course_name':  # 课程名称，用于单课程签到指令和提示输出
         }
     ]
     
@@ -30,14 +27,13 @@ from PIL import Image
         "latitude": "-1",  # 纬度
         'longitude': "-1",  # 经度
         'addr': "",  # 位置名称
-        'ifTiJiao': "0"  # 是否开启提交位置信息，默认关闭
+        'ifTiJiao': "0"  # 是否开启提交位置信息，'0'关闭, '1'开启
     }
     
     3.拍照签到的图片
     请在该文件的目录下存放名字为up_img.jpg的图片
     如有拍照签到会自动上传该图片，否则会自动上传wyz！
 
-    
 """
 
 # 需要签到的课程列表
@@ -56,13 +52,15 @@ address = {
     'ifTiJiao': "0"  # 是否开启提交位置信息，默认关闭
 }
 
+# <=========我是分割线========>
+
 post_data = {
-    'name': "",  # 姓名
+    'name': "",
     'puid': "",
-    'courseId': "",  # 课程id
-    'classId': "",  # 班级id
-    'fid': "",  # 学校id
-    'activeId': "",  # 无需填写
+    'courseId': "",
+    'classId': "",
+    'fid': "",
+    'activeId': "",
 }
 
 header = {
@@ -220,9 +218,11 @@ def get_active_id(text):
         for i in range(len(y)):
             try:
                 rawid = y[i]['onclick']
-                active_id = re.findall(r'activeDetail\((\d+),.*?\)', rawid)[0]
-                # print(active_id)
-                active_list.append(active_id)
+                # active[0] 活动id  active[1] 活动种类。
+                active = re.findall(r'activeDetail\((\d+),(\d+),.*?\)', rawid)[0]
+                # 筛选签到活动,2为签到活动，42为问题
+                if active[1] == '2':
+                    active_list.append(active[0])
             except Exception as ret:
                 pass
 
@@ -344,12 +344,22 @@ def open_course_page(course):
 
 
 def main():
-    login()  # 登陆函数，根据需要自行调用
-    for course in course_list:
-        # 遍历课程检查是否需要签到
-        open_course_page(course)
-        print('-' * 50)
-        time.sleep(5)
+    if len(sys.argv) > 2:
+        print('请输入正确的参数')
+    elif len(sys.argv) == 1:
+        # 遍历所有课程
+        login()
+        for course in course_list:
+            open_course_page(course)
+            print('-' * 50)
+            time.sleep(5)
+    elif len(sys.argv) == 2:
+        course_name = sys.argv[1]
+        for course in course_list:
+            if course['course_name'] == course_name:
+                login()
+                open_course_page(course)
+                break
 
 
 if __name__ == '__main__':
